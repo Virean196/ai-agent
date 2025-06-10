@@ -14,7 +14,8 @@ def write_file(working_directory, file_path, content):
                 with open(os.path.join(working_directory, os.path.join(directory,filename)), "w") as f:
                     f.write(content)
                     print(f'Successfully wrote to "{file_path}" ({len(content)} characters written)')
+            pass
         else:
-            return f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory'
+            print(f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory')
     except Exception as e:
         return f"Error: {str(e)}"
