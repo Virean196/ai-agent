@@ -10,6 +10,9 @@ You are a helpful AI coding agent.
 When a user asks a question or makes a request, make a function call plan. You can perform the following operations:
 
 - List files and directories
+- Read file contents
+- Execute Python files with optional arguments
+- Write or overwrite files
 
 All paths you provide should be relative to the working directory. You do not need to specify the working directory in your function calls as it is automatically injected for security reasons.
 """
@@ -39,7 +42,54 @@ def main(*argv):
     ),
     )
 
-    available_functions = types.Tool(function_declarations=[schema_get_files_info,])
+    schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="Get the content of a file in the specified directory, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the file, relative to the working directory. If not provided, will return error message. If the file has more than 10000 characters it will return a truncated version of the file with 10000 characters",
+            ),
+        },
+    ),
+    )
+
+    schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description= "Overwrites into a file in the specified directory,constrained to the working directory. If the directory doesn't exist and the is within the working directory, creates a directory and the file.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the file, relative to the working directory. If not provided, will return error message. If the file has more than 10000 characters it will return a truncated version of the file with 10000 characters",
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="The content that is to be written into the file"
+            )
+        },
+    ),
+    )
+
+    schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description= "Runs a python file, constrained to the working directory.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file_path": types.Schema(
+                type=types.Type.STRING,
+                description="The path to the file, relative to the working directory. If not provided, will return error message. If the file doesn't end in .py, returns an error. If the file doesn't exist, returns error",
+            ),
+        },
+    ),
+    )
+
+    available_functions = types.Tool(function_declarations=[schema_get_files_info,schema_get_file_content,schema_write_file, schema_run_python_file])
+    
 
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -54,7 +104,7 @@ def main(*argv):
                 print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
         else:
             for function_call_part in response.function_calls:
-                print(f"Calling function: {function_call_part.name}({function_call_part.args})")
+                print(f"Calling function: {function_call_part.name}({function_call_part.args})")   
     else:
         print("Error, invalid prompt")
         return 1
