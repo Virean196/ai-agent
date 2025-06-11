@@ -3,6 +3,7 @@ import sys
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from functions.call_function import call_function
 
 system_prompt = """
 You are a helpful AI coding agent.
@@ -18,11 +19,10 @@ All paths you provide should be relative to the working directory. You do not ne
 """
 
 def check_for_verbose(args):
-    for arg in args:
-        if arg == "--verbose":
-            return True
-        else:
-            return False
+    if "--verbose" in args:
+        return True
+    else: 
+        return False
 
 def main(*argv):
     user_prompt = sys.argv[1]
@@ -89,7 +89,7 @@ def main(*argv):
     )
 
     available_functions = types.Tool(function_declarations=[schema_get_files_info,schema_get_file_content,schema_write_file, schema_run_python_file])
-    
+  
 
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -97,14 +97,16 @@ def main(*argv):
     model = 'gemini-2.0-flash-001'
     response = client.models.generate_content(model=model, contents=messages,config=types.GenerateContentConfig(tools=[available_functions],system_instruction=system_prompt))
     if response:
-        if len(sys.argv) > 2:
-            if check_for_verbose:
-                print(f"User prompt: {sys.argv[1]}")
-                print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")
-                print(f"Response tokens: {response.usage_metadata.candidates_token_count}")
-        else:
-            for function_call_part in response.function_calls:
-                print(f"Calling function: {function_call_part.name}({function_call_part.args})")   
+        verbose = check_for_verbose(sys.argv)
+        for function_call in response.function_calls:
+            function_call_result = call_function(function_call, verbose)
+            if function_call_result.parts[0].function_response.response:
+                if verbose:
+                    print(f"-> {function_call_result.parts[0].function_response.response}")
+                else:
+                    print(function_call_result.parts[0].function_response.response["result"])
+            else: 
+                raise Exception("CRITICAL ERROR")
     else:
         print("Error, invalid prompt")
         return 1

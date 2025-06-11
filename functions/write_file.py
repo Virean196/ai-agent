@@ -10,7 +10,8 @@ def write_file(working_directory, file_path, content):
                     print(f'Successfully wrote to "{file_path}" ({len(content)} characters written)')
             else:
                 directory, filename = os.path.split(file_path)
-                os.makedirs(os.path.join(working_directory, directory))
+                if directory:
+                    os.makedirs(os.path.join(working_directory, directory))
                 with open(os.path.join(working_directory, os.path.join(directory,filename)), "w") as f:
                     f.write(content)
                     print(f'Successfully wrote to "{file_path}" ({len(content)} characters written)')
