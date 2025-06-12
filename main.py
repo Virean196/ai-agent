@@ -26,7 +26,7 @@ def check_for_verbose(args):
 
 def main(*argv):
     user_prompt = sys.argv[1]
-    messages = [types.Content(role="user", parts=[types.Part(text=user_prompt)]),]
+    
 
     schema_get_files_info = types.FunctionDeclaration(
     name="get_files_info",
@@ -89,27 +89,23 @@ def main(*argv):
     )
 
     available_functions = types.Tool(function_declarations=[schema_get_files_info,schema_get_file_content,schema_write_file, schema_run_python_file])
-  
+    messages = [types.Content(role="user", parts=[types.Part(text=user_prompt)]),]
+
 
     load_dotenv()
     api_key = os.environ.get("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
     model = 'gemini-2.0-flash-001'
-    response = client.models.generate_content(model=model, contents=messages,config=types.GenerateContentConfig(tools=[available_functions],system_instruction=system_prompt))
-    if response:
-        verbose = check_for_verbose(sys.argv)
-        for function_call in response.function_calls:
-            function_call_result = call_function(function_call, verbose)
-            if function_call_result.parts[0].function_response.response:
-                if verbose:
-                    print(f"-> {function_call_result.parts[0].function_response.response}")
-                else:
-                    print(function_call_result.parts[0].function_response.response["result"])
-            else: 
-                raise Exception("CRITICAL ERROR")
-    else:
-        print("Error, invalid prompt")
-        return 1
-
-
+    for i in range(0,20):
+        response = client.models.generate_content(model=model, contents=messages,config=types.GenerateContentConfig(tools=[available_functions],system_instruction=system_prompt))
+        for candidate in response.candidates:
+            messages.append(candidate.content)
+        if response and response.function_calls:
+            verbose = check_for_verbose(sys.argv)
+            for function_call in response.function_calls:
+                function_call_result = call_function(function_call, verbose)
+                tool_content = types.Content(role="tool", parts=function_call_result.parts)
+                messages.append(tool_content)
+        else:
+            print(response.text)
 main()

@@ -12,9 +12,9 @@ def call_function(function_call_part, verbose=False):
     #function_dict = {"working_directory": "./calculator", "function_name": function_name, "function_args": function_args}
 
     if verbose:
-        print(f"Calling function: {function_name}({function_args})") 
+        print(f"- Calling function: {function_name}({function_args})") 
     else:
-        print(f" - Calling function: {function_call_part.name}")
+        print(f"- Calling function: {function_call_part.name}")
     
     
     if function_name in function_mapping:
