@@ -108,4 +108,5 @@ def main(*argv):
                 messages.append(tool_content)
         else:
             print(response.text)
+            return 0
 main()
